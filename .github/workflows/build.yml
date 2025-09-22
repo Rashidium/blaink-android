@@ -51,5 +51,8 @@ jobs:
       with:
         name: build-reports
         path: |
-          **/build/reports/
-          **/build/test-results/
+          blaink-core/build/reports/
+          blaink-push/build/reports/
+          blaink/build/reports/
+          sample/build/reports/
+        retention-days: 30
