@@ -51,8 +51,7 @@ jobs:
       with:
         name: build-reports
         path: |
-          blaink-core/build/reports/
-          blaink-push/build/reports/
-          blaink/build/reports/
-          sample/build/reports/
+          **/build/reports/
+          **/build/test-results/
+        if-no-files-found: ignore
         retention-days: 30
