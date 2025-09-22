@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "23001319133",
+    "project_id": "blaink-android-sample",
+    "storage_bucket": "blaink-android-sample.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:23001319133:android:d77a29901f28647964fd34",
+        "android_client_info": {
+          "package_name": "com.blaink.sample"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDD7bjgas3GgERb-IWNHwmWZ1EYgoTP2Bs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
