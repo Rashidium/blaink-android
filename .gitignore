@@ -89,3 +89,5 @@ lint/tmp/
 
 # macOS
 .DS_Store
+
+gradle-*.zip
