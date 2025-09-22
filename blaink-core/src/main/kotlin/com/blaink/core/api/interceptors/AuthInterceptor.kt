@@ -7,10 +7,10 @@
 
 package com.blaink.core.api.interceptors
 
+import android.util.Base64
 import com.blaink.core.storage.UserSession
 import okhttp3.Interceptor
 import okhttp3.Response
-import java.util.Base64
 
 /**
  * Interceptor to add authentication tokens to API requests
@@ -52,6 +52,6 @@ class AuthInterceptor : Interceptor {
         val username = "Blaink"
         val password = "Blaink!@2025"
         val credentials = "$username:$password"
-        return Base64.getEncoder().encodeToString(credentials.toByteArray())
+        return Base64.encodeToString(credentials.toByteArray(), Base64.NO_WRAP)
     }
 }

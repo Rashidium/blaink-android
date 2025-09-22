@@ -39,6 +39,13 @@ android {
     buildFeatures {
         buildConfig = true
     }
+    
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+            withJavadocJar()
+        }
+    }
 }
 
 dependencies {
@@ -67,4 +74,43 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
 }
 
-// Publishing configuration removed for now to simplify build
+publishing {
+    publications {
+        register<MavenPublication>("release") {
+            groupId = "com.blaink"
+            artifactId = project.name
+            version = project.version.toString()
+            
+            afterEvaluate {
+                from(components["release"])
+            }
+            
+            pom {
+                name.set("Blaink Android SDK - ${project.name}")
+                description.set("Android SDK for Blaink push notification and messaging platform")
+                url.set("https://github.com/Rashidium/blaink-android")
+                
+                licenses {
+                    license {
+                        name.set("MIT License")
+                        url.set("https://opensource.org/licenses/MIT")
+                    }
+                }
+                
+                developers {
+                    developer {
+                        id.set("rashidium")
+                        name.set("Rashid Ramazanov")
+                        email.set("support@blaink.com")
+                    }
+                }
+                
+                scm {
+                    connection.set("scm:git:github.com/Rashidium/blaink-android.git")
+                    developerConnection.set("scm:git:ssh://github.com/Rashidium/blaink-android.git")
+                    url.set("https://github.com/Rashidium/blaink-android/tree/main")
+                }
+            }
+        }
+    }
+}

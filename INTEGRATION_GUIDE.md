@@ -1,5 +1,104 @@
 # Blaink Android SDK Integration Guide
 
+## Quick Start
+
+### 1. Add Repository
+
+#### Option A: GitHub Packages (Recommended)
+```gradle
+repositories {
+    maven {
+        name = "GitHubPackages"
+        url = uri("https://maven.pkg.github.com/Rashidium/blaink-android")
+        credentials {
+            username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
+            password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
+        }
+    }
+}
+```
+
+#### Option B: JitPack (Easier for public use)
+```gradle
+repositories {
+    maven { url 'https://jitpack.io' }
+}
+```
+
+### 2. Add Dependencies
+
+#### GitHub Packages
+```gradle
+dependencies {
+    implementation "com.blaink:blaink:1.0.0"
+}
+```
+
+#### JitPack
+```gradle
+dependencies {
+    implementation 'com.github.Rashidium:blaink-android:v1.0.0'
+}
+```
+
+### 3. Initialize SDK
+
+```kotlin
+import com.blaink.Blaink
+import com.blaink.core.PushEnvironment
+
+class MainActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        
+        // Initialize Blaink SDK
+        Blaink.setup(
+            context = applicationContext,
+            sdkKey = "YOUR_SDK_KEY",
+            environment = PushEnvironment.DEVELOPMENT,
+            isDebugLogsEnabled = true
+        )
+    }
+}
+```
+
+### 4. Firebase Setup
+
+1. Create a Firebase project at [Firebase Console](https://console.firebase.google.com/)
+2. Add your Android app with package name
+3. Download `google-services.json`
+4. Place it in your app's `src/main/` directory
+5. Add Firebase plugin to your app's `build.gradle`:
+
+```gradle
+plugins {
+    id 'com.google.gms.google-services'
+}
+```
+
+### 5. Handle Push Notifications
+
+```kotlin
+class MyApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        
+        // Set delegate for push notifications
+        Blaink.delegate = object : BlainkDelegate {
+            override fun didReceiveNotification(payload: Map<String, String>) {
+                // Handle incoming push notification
+                Log.d("Blaink", "Received notification: $payload")
+            }
+            
+            override fun didRegisterForBlainkNotifications(userId: String) {
+                // Called when device is registered with Blaink backend
+                Log.d("Blaink", "Registered with user ID: $userId")
+            }
+        }
+    }
+}
+```
+
 ## Project Structure
 
 ```
@@ -8,350 +107,97 @@ blaink-android/
 ├── blaink-push/              # FCM integration and notifications
 ├── blaink/                   # Main SDK facade
 ├── sample/                   # Sample application
-├── .github/workflows/        # CI/CD pipelines
-└── gradle/                   # Gradle configuration
+└── .github/workflows/        # CI/CD pipelines
 ```
 
-## Step-by-Step Integration
+## SDK Modules
 
-### 1. Prerequisites
+### Core Module (`blaink-core`)
+- **Networking**: HTTP client with SSL pinning
+- **Storage**: Secure storage using AndroidX Security
+- **Authentication**: Basic auth and token management
+- **Device Info**: Device identification and metadata
 
-- Android Studio Arctic Fox or later
-- Minimum SDK: API 21 (Android 5.0)
-- Target SDK: API 34 (Android 14)
-- Firebase project with FCM enabled
+### Push Module (`blaink-push`)
+- **FCM Integration**: Firebase Cloud Messaging
+- **Notification Handling**: Background and foreground notifications
+- **Token Management**: Automatic token refresh and submission
 
-### 2. Add Dependencies
+### Main Module (`blaink`)
+- **Public API**: Main entry point for SDK
+- **Configuration**: Setup and initialization
+- **Delegates**: Callback handling for events
 
-#### Option A: GitHub Packages (Recommended for private repos)
+## API Reference
 
-```kotlin
-// In your app-level build.gradle.kts
-repositories {
-    maven {
-        url = uri("https://maven.pkg.github.com/blaink/blaink-android")
-        credentials {
-            username = "your-github-username"
-            password = "your-github-personal-access-token"
-        }
-    }
-}
+### Blaink.setup()
+Initialize the Blaink SDK with your configuration.
 
-dependencies {
-    implementation("com.blaink:blaink-android:1.0.0")
-}
-```
+**Parameters:**
+- `context`: Application context
+- `sdkKey`: Your Blaink SDK key
+- `environment`: PushEnvironment.DEVELOPMENT or PushEnvironment.PRODUCTION
+- `isDebugLogsEnabled`: Enable debug logging
 
-#### Option B: JitPack (For public repos)
+### Blaink.registerForRemoteNotifications()
+Register for push notifications with FCM token.
 
-```kotlin
-repositories {
-    maven { url = uri("https://jitpack.io") }
-}
+**Parameters:**
+- `deviceToken`: FCM registration token
 
-dependencies {
-    implementation("com.github.blaink:blaink-android:1.0.0")
-}
-```
+### BlainkDelegate
+Interface for handling SDK events.
 
-### 3. Firebase Setup
+**Methods:**
+- `didReceiveNotification(payload: Map<String, String>)`: Called when push notification is received
+- `didRegisterForBlainkNotifications(userId: String)`: Called when device is registered
 
-1. Add your `google-services.json` file to your `app/` directory
-2. Apply the Google Services plugin in your app-level `build.gradle.kts`:
+## Security Features
 
-```kotlin
-plugins {
-    id("com.google.gms.google-services")
-}
-```
+### SSL Certificate Pinning
+The SDK implements SSL certificate pinning for secure communication with Blaink servers.
 
-### 4. Initialize SDK
-
-Create an Application class that implements `BlainkDelegate`:
-
-```kotlin
-import com.blaink.Blaink
-import com.blaink.core.BlainkDelegate
-import com.blaink.core.PushEnvironment
-
-class MyApplication : Application(), BlainkDelegate {
-    
-    override fun onCreate() {
-        super.onCreate()
-        
-        val blaink = Blaink.getInstance()
-        blaink.delegate = this
-        blaink.setup(
-            context = this,
-            sdkKey = "your_blaink_sdk_key", // Get this from Blaink dashboard
-            environment = if (BuildConfig.DEBUG) {
-                PushEnvironment.DEVELOPMENT
-            } else {
-                PushEnvironment.PRODUCTION
-            },
-            isDebugLogsEnabled = BuildConfig.DEBUG
-        )
-    }
-    
-    override fun didReceiveNotification(notification: Map<String, Any>) {
-        // Handle notification received
-        // This is called when a push notification is received
-        Log.d("Blaink", "Notification received: $notification")
-        
-        // Extract notification data
-        val title = notification["title"] as? String
-        val body = notification["body"] as? String
-        val customData = notification["customData"] as? Map<String, Any>
-        
-        // Handle notification display or navigation
-    }
-    
-    override fun didRegisterForBlainkNotifications(blainkUserId: String) {
-        // Handle successful registration
-        Log.d("Blaink", "Registered with Blaink user ID: $blainkUserId")
-        
-        // Save user ID if needed for analytics or other purposes
-        // This ID uniquely identifies this device/user in Blaink system
-    }
-}
-```
-
-### 5. Register Application Class
-
-Update your `AndroidManifest.xml`:
-
-```xml
-<application
-    android:name=".MyApplication"
-    ... >
-```
-
-### 6. Register FCM Token
-
-In your main activity or where appropriate:
-
-```kotlin
-import com.google.firebase.messaging.FirebaseMessaging
-
-class MainActivity : AppCompatActivity() {
-    
-    private val blaink = Blaink.getInstance()
-    
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        
-        // Register for FCM token
-        setupPushNotifications()
-    }
-    
-    private fun setupPushNotifications() {
-        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-            if (!task.isSuccessful) {
-                Log.w("FCM", "Fetching FCM registration token failed", task.exception)
-                return@addOnCompleteListener
-            }
-            
-            // Get new FCM registration token
-            val token = task.result
-            Log.d("FCM", "FCM Registration Token: $token")
-            
-            // Register the token with Blaink
-            blaink.registerForRemoteNotifications(token)
-        }
-    }
-}
-```
-
-### 7. Add FCM Service to Manifest
-
-Update your `AndroidManifest.xml` to include the Blaink FCM service:
-
-```xml
-<application>
-    <!-- Your existing components -->
-    
-    <!-- Blaink FCM Service -->
-    <service
-        android:name="com.blaink.push.BlainkFCMService"
-        android:exported="false">
-        <intent-filter>
-            <action android:name="com.google.firebase.MESSAGING_EVENT" />
-        </intent-filter>
-    </service>
-</application>
-```
-
-### 8. Handle Notification Interactions
-
-Track notification interactions for analytics:
-
-```kotlin
-// When user taps on notification
-blaink.trackNotificationAction(notificationId, "opened")
-
-// When user dismisses notification
-blaink.trackNotificationAction(notificationId, "dismissed")
-
-// When user performs custom action
-blaink.trackNotificationAction(notificationId, "custom_action_name")
-```
-
-### 9. Advanced Features
-
-#### Session Management
-
-```kotlin
-import com.blaink.core.storage.UserSession
-
-// Check if user is authenticated
-if (UserSession.isAuthenticated) {
-    // User has valid session
-    val accessToken = UserSession.accessToken
-}
-
-// Logout user
-lifecycleScope.launch {
-    val result = blaink.logout()
-    if (result.isSuccess) {
-        // Logout successful, redirect to login screen
-    } else {
-        // Handle logout error
-        val error = result.exceptionOrNull()
-    }
-}
-```
-
-#### Error Handling
-
-```kotlin
-// Get current user information
-lifecycleScope.launch {
-    val result = blaink.getCurrentUser()
-    result.onSuccess { userId ->
-        // User information retrieved successfully
-        Log.d("Blaink", "Current user ID: $userId")
-    }.onFailure { exception ->
-        // Handle error
-        Log.e("Blaink", "Failed to get user info", exception)
-    }
-}
-```
-
-## Testing
-
-### Development Environment
-
-1. Use `PushEnvironment.DEVELOPMENT` for testing
-2. Enable debug logs with `isDebugLogsEnabled = true`
-3. Test with Firebase Test Lab or real devices
-
-### Push Notification Testing
-
-1. Use Firebase Console to send test notifications
-2. Include `notificationID` in the payload for tracking
-3. Verify notification delivery and interaction tracking
-
-### SSL Pinning Testing
-
-1. Test with Charles Proxy or similar tools
-2. Verify certificate pinning blocks man-in-the-middle attacks
-3. Test certificate rotation scenarios
+### Secure Storage
+Sensitive data (tokens, device IDs) are stored using AndroidX Security Crypto with hardware-backed encryption when available.
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **FCM token not received**
-   - Check Firebase configuration
-   - Verify `google-services.json` is in the correct location
-   - Ensure Google Play Services are installed on device
+1. **FCM Token Registration Failed**
+   - Ensure `google-services.json` is properly configured
+   - Check that Google Play Services are available on the device
+   - Verify Firebase project configuration
 
-2. **SSL pinning failures**
-   - Verify certificate hashes are correct
-   - Check domain configuration in `SSLPinningManager`
-   - Test with actual server endpoints
+2. **SSL Pinning Failures**
+   - Check device network connectivity
+   - Ensure certificate hasn't expired
+   - Verify server certificate matches pinned certificates
 
-3. **Authentication issues**
-   - Verify SDK key is correct
-   - Check network connectivity
-   - Review server logs for authentication errors
+3. **Build Errors**
+   - Ensure all required dependencies are included
+   - Check that Firebase plugin is applied
+   - Verify repository configuration
 
-### Debug Logs
+### Debug Logging
 
-Enable debug logging to see detailed SDK operations:
+Enable debug logging to troubleshoot issues:
 
 ```kotlin
-blaink.setup(
-    context = this,
-    sdkKey = "your_sdk_key",
+Blaink.setup(
+    context = applicationContext,
+    sdkKey = "YOUR_SDK_KEY",
     environment = PushEnvironment.DEVELOPMENT,
-    isDebugLogsEnabled = true // Enable for debugging
+    isDebugLogsEnabled = true  // Enable debug logs
 )
 ```
 
-Look for logs with the "Blaink" tag in Logcat.
-
-## ProGuard/R8 Configuration
-
-If using code shrinking, add these rules to `proguard-rules.pro`:
-
-```proguard
-# Blaink SDK
--keep class com.blaink.** { *; }
--dontwarn com.blaink.**
-
-# Kotlinx Serialization
--keepattributes *Annotation*, InnerClasses
--dontnote kotlinx.serialization.AnnotationsKt
--keep,includedescriptorclasses class com.blaink.**$$serializer { *; }
--keepclassmembers class com.blaink.** {
-    *** Companion;
-}
--keepclasseswithmembers class com.blaink.** {
-    kotlinx.serialization.KSerializer serializer(...);
-}
-
-# Firebase
--keep class com.google.firebase.** { *; }
--dontwarn com.google.firebase.**
-```
-
-## Migration from Other SDKs
-
-### From Native Implementation
-
-1. Remove existing push notification code
-2. Replace with Blaink SDK initialization
-3. Update notification handling logic
-4. Test thoroughly with existing notification flows
-
-### Version Updates
-
-When updating the SDK version:
-
-1. Check the changelog for breaking changes
-2. Update certificate hashes if needed
-3. Test all notification flows
-4. Verify SSL pinning still works
-
-## Security Best Practices
-
-1. **API Keys**: Store SDK keys securely, never in version control
-2. **Certificate Pinning**: Regularly update certificate hashes
-3. **Secure Storage**: SDK uses Android Keystore for sensitive data
-4. **Network Security**: All API calls use HTTPS with certificate pinning
-
-## Performance Considerations
-
-1. **Initialization**: SDK initializes asynchronously to avoid blocking main thread
-2. **Storage**: Uses efficient encrypted storage for session data
-3. **Network**: Implements connection pooling and request optimization
-4. **Memory**: Designed to minimize memory footprint
-
 ## Support
 
-For integration support:
-- 📧 Email: dev@blaink.com
-- 📖 Documentation: https://docs.blaink.com
-- 🐛 Issues: GitHub Issues
+For issues and questions:
+- GitHub Issues: [https://github.com/Rashidium/blaink-android/issues](https://github.com/Rashidium/blaink-android/issues)
+- Email: support@blaink.com
+
+## License
+
+MIT License - see [LICENSE](LICENSE) file for details.

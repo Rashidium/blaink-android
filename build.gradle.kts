@@ -12,31 +12,34 @@ plugins {
     alias(libs.plugins.kotlin.android) apply false
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.google.services) apply false
+    id("maven-publish")
+    id("signing")
 }
 
 allprojects {
     group = "com.blaink"
-    version = "1.0.0"
+    version = System.getenv("RELEASE_VERSION") ?: "1.0.0"
 }
 
-// Publishing configuration will be set up later
-//subprojects {
-//    apply(plugin = "maven-publish")
-//    apply(plugin = "signing")
-//    
-//    publishing {
-//        repositories {
-//            maven {
-//                name = "GitHubPackages"
-//                url = uri("https://maven.pkg.github.com/blaink/blaink-android")
-//                credentials {
-//                    username = project.findProperty("gpr.user") as String? ?: System.getenv("USERNAME")
-//                    password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
-//                }
-//            }
-//        }
-//    }
-//}
+subprojects {
+    if (name in listOf("blaink", "blaink-core", "blaink-push")) {
+        apply(plugin = "maven-publish")
+        apply(plugin = "signing")
+        
+        publishing {
+            repositories {
+                maven {
+                    name = "GitHubPackages"
+                    url = uri("https://maven.pkg.github.com/Rashidium/blaink-android")
+                    credentials {
+                        username = project.findProperty("gpr.user") as String? ?: System.getenv("GITHUB_ACTOR")
+                        password = project.findProperty("gpr.key") as String? ?: System.getenv("GITHUB_TOKEN")
+                    }
+                }
+            }
+        }
+    }
+}
 
 tasks.register("cleanAll", Delete::class) {
     delete(layout.buildDirectory)
