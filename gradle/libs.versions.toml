@@ -1,6 +1,6 @@
 [versions]
 kotlin = "1.9.25"
-android-gradle = "8.7.3"
+android-gradle = "8.13.0"
 compileSdk = "35"
 targetSdk = "35"
 minSdk = "21"
