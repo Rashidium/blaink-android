@@ -95,19 +95,64 @@ jobs:
     - name: Check if version already exists
       run: |
         VERSION="${{ steps.extract_version.outputs.version }}"
-        echo "Checking if version $VERSION already exists..."
+        IS_TAG="${{ steps.extract_version.outputs.is_tag }}"
+        EVENT_NAME="${{ github.event_name }}"
         
-        # Check if any of the packages already exist
+        echo "Checking version: $VERSION"
+        echo "Is tag event: $IS_TAG"
+        echo "Event name: $EVENT_NAME"
+        
+        # If this is a release event or tag push, skip the conflict check
+        # since we're using an existing tag version
+        if [[ "$IS_TAG" == "true" ]]; then
+          echo "Using existing tag version $VERSION - skipping conflict check"
+        else
+          echo "Checking if version $VERSION already exists..."
+          
+          # Check if any of the packages already exist
+          for module in blaink blaink-core blaink-push; do
+            URL="https://maven.pkg.github.com/Rashidium/blaink-android/com/blaink/$module/$VERSION/$module-$VERSION.aar"
+            echo "Checking URL: $URL"
+            
+            # Get HTTP status code
+            STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "$URL")
+            echo "HTTP Status Code: $STATUS_CODE"
+            
+            if [[ "$STATUS_CODE" == "200" ]]; then
+              echo "ERROR: Version $VERSION for $module already exists in GitHub Packages!"
+              echo "Please use a different version number or delete the existing version."
+              exit 1
+            elif [[ "$STATUS_CODE" != "404" ]]; then
+              echo "WARNING: Unexpected status code $STATUS_CODE for $module"
+            fi
+          done
+          echo "Version $VERSION is available for publishing."
+        fi
+      
+    - name: Delete existing packages if tag event
+      if: steps.extract_version.outputs.is_tag == 'true'
+      run: |
+        VERSION="${{ steps.extract_version.outputs.version }}"
+        echo "Deleting existing packages for version $VERSION (tag event)..."
+        
+        # Delete existing packages for this version
         for module in blaink blaink-core blaink-push; do
           URL="https://maven.pkg.github.com/Rashidium/blaink-android/com/blaink/$module/$VERSION/$module-$VERSION.aar"
-          if curl -s -o /dev/null -w "%{http_code}" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "$URL" | grep -q "200"; then
-            echo "ERROR: Version $VERSION for $module already exists in GitHub Packages!"
-            echo "Please use a different version number or delete the existing version."
-            exit 1
+          echo "Deleting: $URL"
+          
+          # Try to delete the package
+          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "$URL")
+          echo "Delete status code: $STATUS_CODE"
+          
+          if [[ "$STATUS_CODE" == "204" ]]; then
+            echo "Successfully deleted $module-$VERSION"
+          elif [[ "$STATUS_CODE" == "404" ]]; then
+            echo "$module-$VERSION doesn't exist (already clean)"
+          else
+            echo "Warning: Failed to delete $module-$VERSION (status: $STATUS_CODE)"
           fi
         done
-        echo "Version $VERSION is available for publishing."
-      
+        
     - name: Publish to GitHub Packages
       run: ./gradlew publish
       env:
