@@ -11,7 +11,7 @@ android {
     defaultConfig {
         applicationId = "com.blaink.sample"
         minSdk = libs.versions.minSdk.get().toInt()
-        targetSdk = libs.versions.targetSdk.get().toInt()
+        this.targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
 
@@ -29,12 +29,12 @@ android {
     }
     
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_18
+        targetCompatibility = JavaVersion.VERSION_18
     }
     
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "18"
     }
     
     buildFeatures {
@@ -48,8 +48,8 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.activity)
-    implementation("com.google.android.material:material:1.10.0")
-    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    implementation(libs.material)
+    implementation(libs.androidx.constraintlayout)
     
     // Firebase
     implementation(platform(libs.firebase.bom))
