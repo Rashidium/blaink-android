@@ -1,9 +1,8 @@
 name: Publish Package
 
 on:
-  release:
-    types: [created]
   push:
+    branches: [main]
     tags:
       - 'v*'
 
@@ -11,12 +10,14 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write  # Changed to write to allow tag creation
       packages: write
       
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history for tags
     
     - name: Set up JDK 17
       uses: actions/setup-java@v4
@@ -37,21 +38,38 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
       
-    - name: Extract version from tag
+    - name: Extract version from tag or generate new version
       id: extract_version
       run: |
         if [[ "${{ github.ref }}" =~ ^refs/tags/v(.+)$ ]]; then
+          # If this is a tag push, use the tag version
           echo "version=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+          echo "is_tag=true" >> $GITHUB_OUTPUT
         else
-          # Get the latest tag and increment patch version
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          if [[ "$LATEST_TAG" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
-            MAJOR=${BASH_REMATCH[1]}
-            MINOR=${BASH_REMATCH[2]}
-            PATCH=$((BASH_REMATCH[3] + 1))
-            echo "version=${MAJOR}.${MINOR}.${PATCH}" >> $GITHUB_OUTPUT
-          else
+          # If this is a regular push, check if we need to create a new tag
+          echo "is_tag=false" >> $GITHUB_OUTPUT
+          
+          # Get all existing tags (both v* and plain version tags)
+          ALL_TAGS=$(git tag -l | grep -E '^(v)?[0-9]+\.[0-9]+\.[0-9]+$' | sed 's/^v//' | sort -V)
+          
+          if [ -z "$ALL_TAGS" ]; then
             echo "version=1.0.0" >> $GITHUB_OUTPUT
+          else
+            # Get the highest version
+            LATEST_VERSION=$(echo "$ALL_TAGS" | tail -1)
+            
+            # Parse version components
+            if [[ "$LATEST_VERSION" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+              MAJOR=${BASH_REMATCH[1]}
+              MINOR=${BASH_REMATCH[2]}
+              PATCH=${BASH_REMATCH[3]}
+              
+              # Increment patch version
+              NEW_PATCH=$((PATCH + 1))
+              echo "version=${MAJOR}.${MINOR}.${NEW_PATCH}" >> $GITHUB_OUTPUT
+            else
+              echo "version=1.0.0" >> $GITHUB_OUTPUT
+            fi
           fi
         fi
       
@@ -85,3 +103,21 @@ jobs:
         GITHUB_ACTOR: ${{ github.actor }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         RELEASE_VERSION: ${{ steps.extract_version.outputs.version }}
+        
+    - name: Create and push tag (only for regular pushes)
+      if: steps.extract_version.outputs.is_tag == 'false'
+      run: |
+        VERSION="${{ steps.extract_version.outputs.version }}"
+        TAG_NAME="v${VERSION}"
+        
+        echo "Creating and pushing tag: $TAG_NAME"
+        
+        # Configure git
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        # Create and push the tag
+        git tag "$TAG_NAME"
+        git push origin "$TAG_NAME"
+        
+        echo "Tag $TAG_NAME created and pushed successfully!"
