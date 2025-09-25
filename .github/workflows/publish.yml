@@ -5,8 +5,7 @@ on:
     types: [created]
   push:
     branches: [main]
-    tags:
-      - 'v*'
+    # Removed tags trigger to prevent duplicate builds when creating releases through GitHub UI
 
 jobs:
   publish:
@@ -52,12 +51,8 @@ jobs:
             echo "version=${TAG_NAME}" >> $GITHUB_OUTPUT
           fi
           echo "is_tag=true" >> $GITHUB_OUTPUT
-        elif [[ "${{ github.ref }}" =~ ^refs/tags/v(.+)$ ]]; then
-          # If this is a tag push, use the tag version
-          echo "version=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
-          echo "is_tag=true" >> $GITHUB_OUTPUT
         else
-          # If this is a regular push, check if we need to create a new tag
+          # If this is a regular push to main, auto-generate next version
           echo "is_tag=false" >> $GITHUB_OUTPUT
           
           # Get all existing tags (both v* and plain version tags)
