@@ -33,6 +33,10 @@
             </intent-filter>
         </service>
 
+        <service
+            android:name="com.blaink.push.NotificationDismissService"
+            android:exported="false" />
+
     </application>
 
 </manifest>
