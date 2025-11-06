@@ -24,6 +24,18 @@ print_warning() {
     echo -e "${YELLOW}⚠${NC} $1"
 }
 
+# Function to show usage
+show_usage() {
+    echo "Usage: $0 [version]"
+    echo ""
+    echo "Examples:"
+    echo "  $0              # Interactive mode - choose version bump type"
+    echo "  $0 1.2.3        # Create release v1.2.3"
+    echo "  $0 v1.2.3       # Create release v1.2.3 (v prefix optional)"
+    echo ""
+    exit 1
+}
+
 # Function to get the latest tag
 get_latest_tag() {
     git tag -l | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' | sed 's/^v//' | sort -V | tail -1
@@ -57,6 +69,26 @@ increment_version() {
         echo "1.0.0"
     fi
 }
+
+# Parse command line arguments
+if [[ "$1" == "-h" ]] || [[ "$1" == "--help" ]]; then
+    show_usage
+fi
+
+# Check if version is provided as argument
+VERSION_ARG=""
+if [[ -n "$1" ]]; then
+    VERSION_ARG="$1"
+    # Remove 'v' prefix if present
+    VERSION_ARG="${VERSION_ARG#v}"
+    
+    # Validate version format
+    if [[ ! $VERSION_ARG =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        print_error "Invalid version format: $VERSION_ARG"
+        echo "Version must be in format X.Y.Z (e.g., 1.2.3)"
+        exit 1
+    fi
+fi
 
 # Check if gh CLI is installed
 if ! command -v gh &> /dev/null; then
@@ -117,38 +149,44 @@ echo "  Create New Release"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-# Ask for version bump type
-echo "Select version bump type:"
-echo "  1) Patch (${LATEST_TAG} → $(increment_version $LATEST_TAG patch))"
-echo "  2) Minor (${LATEST_TAG} → $(increment_version $LATEST_TAG minor))"
-echo "  3) Major (${LATEST_TAG} → $(increment_version $LATEST_TAG major))"
-echo "  4) Custom version"
-echo ""
-read -p "Enter choice (1-4): " choice
+# Use provided version or ask for version bump type
+if [[ -n "$VERSION_ARG" ]]; then
+    NEW_VERSION="$VERSION_ARG"
+    print_info "Using provided version: $NEW_VERSION"
+else
+    # Ask for version bump type
+    echo "Select version bump type:"
+    echo "  1) Patch (${LATEST_TAG} → $(increment_version $LATEST_TAG patch))"
+    echo "  2) Minor (${LATEST_TAG} → $(increment_version $LATEST_TAG minor))"
+    echo "  3) Major (${LATEST_TAG} → $(increment_version $LATEST_TAG major))"
+    echo "  4) Custom version"
+    echo ""
+    read -p "Enter choice (1-4): " choice
 
-case $choice in
-    1)
-        NEW_VERSION=$(increment_version $LATEST_TAG patch)
-        ;;
-    2)
-        NEW_VERSION=$(increment_version $LATEST_TAG minor)
-        ;;
-    3)
-        NEW_VERSION=$(increment_version $LATEST_TAG major)
-        ;;
-    4)
-        read -p "Enter custom version (e.g., 1.2.3): " NEW_VERSION
-        # Validate version format
-        if [[ ! $NEW_VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            print_error "Invalid version format. Must be X.Y.Z (e.g., 1.2.3)"
+    case $choice in
+        1)
+            NEW_VERSION=$(increment_version $LATEST_TAG patch)
+            ;;
+        2)
+            NEW_VERSION=$(increment_version $LATEST_TAG minor)
+            ;;
+        3)
+            NEW_VERSION=$(increment_version $LATEST_TAG major)
+            ;;
+        4)
+            read -p "Enter custom version (e.g., 1.2.3): " NEW_VERSION
+            # Validate version format
+            if [[ ! $NEW_VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                print_error "Invalid version format. Must be X.Y.Z (e.g., 1.2.3)"
+                exit 1
+            fi
+            ;;
+        *)
+            print_error "Invalid choice"
             exit 1
-        fi
-        ;;
-    *)
-        print_error "Invalid choice"
-        exit 1
-        ;;
-esac
+            ;;
+    esac
+fi
 
 TAG_NAME="v${NEW_VERSION}"
 
