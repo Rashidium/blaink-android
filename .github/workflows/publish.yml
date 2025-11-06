@@ -57,7 +57,7 @@ jobs:
       run: ./gradlew publish
       env:
         GITHUB_ACTOR: ${{ github.actor }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
         RELEASE_VERSION: ${{ steps.extract_version.outputs.version }}
         PUBLISH_BINARY_ONLY: true
         
