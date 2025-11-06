@@ -24,13 +24,13 @@ allprojects {
 subprojects {
     if (name in listOf("blaink", "blaink-core", "blaink-push")) {
         apply(plugin = "maven-publish")
-        apply(plugin = "signing")
         
         publishing {
             repositories {
                 maven {
                     name = "GitHubPackages"
-                    url = uri("https://maven.pkg.github.com/Rashidium/blaink-android")
+                    // Change this to your iOS repo if publishing from there
+                    url = uri("https://maven.pkg.github.com/Rashidium/blainks-ios")
                     credentials {
                         username = project.findProperty("gpr.user") as String? ?: System.getenv("GITHUB_ACTOR")
                         password = project.findProperty("gpr.key") as String? ?: System.getenv("GITHUB_TOKEN")
