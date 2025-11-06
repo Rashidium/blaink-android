@@ -36,8 +36,7 @@ android {
     
     publishing {
         singleVariant("release") {
-            withSourcesJar()
-            withJavadocJar()
+            // Binary only - no sources or javadoc
         }
     }
 }
