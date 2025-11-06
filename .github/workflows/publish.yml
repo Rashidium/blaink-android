@@ -106,7 +106,7 @@ jobs:
           
           # Check if any of the packages already exist
           for module in blaink blaink-core blaink-push; do
-            URL="https://maven.pkg.github.com/Rashidium/blaink-android/com/blaink/$module/$VERSION/$module-$VERSION.aar"
+            URL="https://maven.pkg.github.com/Rashidium/blainks-ios/com/blaink/$module/$VERSION/$module-$VERSION.aar"
             echo "Checking URL: $URL"
             
             # Get HTTP status code
@@ -132,7 +132,7 @@ jobs:
         
         # Delete existing packages for this version
         for module in blaink blaink-core blaink-push; do
-          URL="https://maven.pkg.github.com/Rashidium/blaink-android/com/blaink/$module/$VERSION/$module-$VERSION.aar"
+          URL="https://maven.pkg.github.com/Rashidium/blainks-ios/com/blaink/$module/$VERSION/$module-$VERSION.aar"
           echo "Deleting: $URL"
           
           # Try to delete the package
