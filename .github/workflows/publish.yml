@@ -110,7 +110,7 @@ jobs:
             echo "Checking URL: $URL"
             
             # Get HTTP status code
-            STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: token ${{ secrets.PUBLISH_TOKEN }}" "$URL")
+            STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "$URL")
             echo "HTTP Status Code: $STATUS_CODE"
             
             if [[ "$STATUS_CODE" == "200" ]]; then
@@ -136,7 +136,7 @@ jobs:
           echo "Deleting: $URL"
           
           # Try to delete the package
-          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE -H "Authorization: token ${{ secrets.PUBLISH_TOKEN }}" "$URL")
+          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "$URL")
           echo "Delete status code: $STATUS_CODE"
           
           if [[ "$STATUS_CODE" == "204" ]]; then
@@ -152,7 +152,7 @@ jobs:
       run: ./gradlew publish
       env:
         GITHUB_ACTOR: ${{ github.actor }}
-        PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         RELEASE_VERSION: ${{ steps.extract_version.outputs.version }}
         
     - name: Create and push tag (only for regular pushes)
