@@ -76,7 +76,7 @@ publishing {
             pom {
                 name.set("Blaink Android SDK - ${project.name}")
                 description.set("Android SDK for Blaink push notification and messaging platform")
-                url.set("https://github.com/Rashidium/blainks-ios")
+                url.set("https://github.com/Rashidium/blaink-android")
                 
                 licenses {
                     license {
@@ -94,9 +94,9 @@ publishing {
                 }
                 
                 scm {
-                    connection.set("scm:git:github.com/Rashidium/blainks-ios.git")
-                    developerConnection.set("scm:git:ssh://github.com/Rashidium/blainks-ios.git")
-                    url.set("https://github.com/Rashidium/blainks-ios/tree/main")
+                    connection.set("scm:git:github.com/Rashidium/blaink-android.git")
+                    developerConnection.set("scm:git:ssh://github.com/Rashidium/blaink-android.git")
+                    url.set("https://github.com/Rashidium/blaink-android/tree/main")
                 }
             }
         }
