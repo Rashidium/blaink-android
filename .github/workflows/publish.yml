@@ -58,16 +58,25 @@ jobs:
         VERSION="${{ steps.extract_version.outputs.version }}"
         TAG_NAME="v${VERSION}"
         
+        echo "Checking for release $TAG_NAME in blainks-ios..."
+        
         # Check if release already exists
-        if gh release view "$TAG_NAME" --repo Rashidium/blainks-ios &> /dev/null; then
-          echo "Release $TAG_NAME already exists in blainks-ios"
+        if gh release view "$TAG_NAME" --repo Rashidium/blainks-ios 2>/dev/null; then
+          echo "✓ Release $TAG_NAME already exists in blainks-ios"
         else
-          echo "Creating release $TAG_NAME in blainks-ios"
-          gh release create "$TAG_NAME" \
+          echo "Creating release $TAG_NAME in blainks-ios..."
+          
+          # Try to create the release
+          if gh release create "$TAG_NAME" \
             --repo Rashidium/blainks-ios \
             --title "$TAG_NAME" \
-            --notes "Android SDK $TAG_NAME" \
-            --target main
+            --notes "Android SDK $TAG_NAME"; then
+            echo "✓ Successfully created release $TAG_NAME in blainks-ios"
+          else
+            echo "✗ Failed to create release in blainks-ios"
+            echo "Please create the release manually at: https://github.com/Rashidium/blainks-ios/releases/new"
+            exit 1
+          fi
         fi
       env:
         GH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
