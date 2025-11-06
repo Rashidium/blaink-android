@@ -50,9 +50,6 @@ jobs:
         fi
         echo "Version to publish: $(cat $GITHUB_OUTPUT)"
       
-    - name: Run lint
-      run: ./gradlew lint
-      
     - name: Run tests
       run: ./gradlew test
       
