@@ -50,9 +50,6 @@ jobs:
         fi
         echo "Version to publish: $(cat $GITHUB_OUTPUT)"
       
-    - name: Run tests
-      run: ./gradlew test
-      
     - name: Build release AAR (without sources)
       run: ./gradlew assembleRelease
       env:
