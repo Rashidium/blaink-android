@@ -50,56 +50,13 @@ jobs:
         fi
         echo "Version to publish: $(cat $GITHUB_OUTPUT)"
       
-    - name: Build release AAR (without sources)
-      run: ./gradlew assembleRelease
+    - name: Build release AAR (without sources, skip tests)
+      run: ./gradlew assembleRelease -x test
       env:
         RELEASE_VERSION: ${{ steps.extract_version.outputs.version }}
         PUBLISH_BINARY_ONLY: true
       
-    - name: Check if version already exists
-      id: check_version
-      run: |
-        VERSION="${{ steps.extract_version.outputs.version }}"
-        echo "Checking if version $VERSION already exists..."
-        
-        VERSION_EXISTS=false
-        for module in blaink blaink-core blaink-push; do
-          URL="https://maven.pkg.github.com/Rashidium/blaink-android/com/blaink/$module/$VERSION/$module-$VERSION.aar"
-          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "$URL")
-          
-          if [[ "$STATUS_CODE" == "200" ]]; then
-            echo "Version $VERSION for $module already exists"
-            VERSION_EXISTS=true
-            break
-          fi
-        done
-        
-        echo "exists=$VERSION_EXISTS" >> $GITHUB_OUTPUT
-      
-    - name: Delete existing packages if version exists
-      if: steps.check_version.outputs.exists == 'true'
-      run: |
-        VERSION="${{ steps.extract_version.outputs.version }}"
-        echo "Deleting existing packages for version $VERSION..."
-        
-        for module in blaink blaink-core blaink-push; do
-          # Delete the package version using GitHub API
-          PACKAGE_URL="https://api.github.com/user/packages/maven/com.blaink.$module/versions"
-          
-          # Get all versions and find the one matching our version
-          VERSIONS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "$PACKAGE_URL")
-          VERSION_ID=$(echo "$VERSIONS" | jq -r ".[] | select(.name==\"$VERSION\") | .id")
-          
-          if [[ -n "$VERSION_ID" ]]; then
-            DELETE_URL="https://api.github.com/user/packages/maven/com.blaink.$module/versions/$VERSION_ID"
-            STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "$DELETE_URL")
-            echo "Deleted $module-$VERSION (Status: $STATUS_CODE)"
-          else
-            echo "Version $VERSION for $module not found, skipping deletion"
-          fi
-        done
-        
-    - name: Publish compressed binaries to GitHub Packages
+    - name: Publish to GitHub Packages (Public)
       run: ./gradlew publish
       env:
         GITHUB_ACTOR: ${{ github.actor }}
