@@ -53,6 +53,25 @@ jobs:
         RELEASE_VERSION: ${{ steps.extract_version.outputs.version }}
         PUBLISH_BINARY_ONLY: true
       
+    - name: Create release in iOS repo
+      run: |
+        VERSION="${{ steps.extract_version.outputs.version }}"
+        TAG_NAME="v${VERSION}"
+        
+        # Check if release already exists
+        if gh release view "$TAG_NAME" --repo Rashidium/blainks-ios &> /dev/null; then
+          echo "Release $TAG_NAME already exists in blainks-ios"
+        else
+          echo "Creating release $TAG_NAME in blainks-ios"
+          gh release create "$TAG_NAME" \
+            --repo Rashidium/blainks-ios \
+            --title "$TAG_NAME" \
+            --notes "Android SDK $TAG_NAME" \
+            --target main
+        fi
+      env:
+        GH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+      
     - name: Publish to GitHub Packages (Public)
       run: ./gradlew publish
       env:
