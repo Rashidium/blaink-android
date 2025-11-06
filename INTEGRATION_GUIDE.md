@@ -9,7 +9,7 @@
 repositories {
     maven {
         name = "GitHubPackages"
-        url = uri("https://maven.pkg.github.com/Rashidium/blaink-android")
+        url = uri("https://maven.pkg.github.com/Rashidium/blainks-ios")
         credentials {
             username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
             password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
@@ -37,7 +37,7 @@ dependencies {
 #### JitPack
 ```gradle
 dependencies {
-    implementation 'com.github.Rashidium:blaink-android:v1.0.0'
+    implementation 'com.github.Rashidium:blainks-ios:v1.0.0'
 }
 ```
 
