@@ -29,8 +29,7 @@ subprojects {
             repositories {
                 maven {
                     name = "GitHubPackages"
-                    // Change this to your iOS repo if publishing from there
-                    url = uri("https://maven.pkg.github.com/Rashidium/blainks-ios")
+                    url = uri("https://maven.pkg.github.com/Rashidium/blaink-android")
                     credentials {
                         username = project.findProperty("gpr.user") as String? ?: System.getenv("GITHUB_ACTOR")
                         password = project.findProperty("gpr.key") as String? ?: System.getenv("GITHUB_TOKEN")
