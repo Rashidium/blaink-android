@@ -7,6 +7,7 @@
 
 package com.blaink.sample
 
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -29,6 +30,30 @@ class MainActivity : AppCompatActivity() {
         
         // Get FCM token and register with Blaink
         setupPushNotifications()
+        
+        // Handle deeplink if present
+        handleDeeplink(intent)
+    }
+    
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        
+        // Handle deeplink when app is already running
+        handleDeeplink(intent)
+    }
+    
+    private fun handleDeeplink(intent: Intent?) {
+        intent?.data?.let { uri ->
+            val handled = blaink.handleDeeplink(uri)
+            if (handled) {
+                Toast.makeText(
+                    this,
+                    "Deeplink handled: ${uri}",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
     }
     
     private fun setupPushNotifications() {
