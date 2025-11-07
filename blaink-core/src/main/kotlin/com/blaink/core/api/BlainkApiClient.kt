@@ -43,4 +43,5 @@ object BlainkApiClient {
     val authApi: AuthApi by lazy { retrofit.create(AuthApi::class.java) }
     val apnsApi: ApnsApi by lazy { retrofit.create(ApnsApi::class.java) }
     val calendarApi: CalendarApi by lazy { retrofit.create(CalendarApi::class.java) }
+    val testDeviceApi: TestDeviceApi by lazy { retrofit.create(TestDeviceApi::class.java) }
 }
