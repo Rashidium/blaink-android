@@ -34,8 +34,8 @@ class MainActivity : AppCompatActivity() {
         // Handle deeplink if present
         handleDeeplink(intent)
     }
-    
-    override fun onNewIntent(intent: Intent?) {
+
+    override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         
