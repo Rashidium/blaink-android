@@ -22,7 +22,7 @@ class SampleApplication : Application(), BlainkDelegate {
         blaink.delegate = this
         blaink.setup(
             context = this,
-            sdkKey = "eyJwbCI6IjEyQjE1RUQ1LTBBNzAtNDU2QS05RjRFLTlFQUNBMDk2QTEwQiJ9",
+            sdkKey = "eyJwbCI6IjdFNjQ5MEQyLTk3QkItNDZBNi05REMyLTg5REFERTNBRUQ3QSJ9",
             environment = PushEnvironment.DEVELOPMENT,
             isDebugLogsEnabled = true
         )

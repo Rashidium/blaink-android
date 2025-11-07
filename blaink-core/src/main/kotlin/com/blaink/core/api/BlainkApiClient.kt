@@ -19,7 +19,8 @@ import retrofit2.Retrofit
  */
 object BlainkApiClient {
     private const val BASE_URL = "https://blainks.com/"
-    
+//    private const val BASE_URL = "http://192.168.1.114:5432/"
+
     private val json = Json {
         ignoreUnknownKeys = true
         coerceInputValues = true
