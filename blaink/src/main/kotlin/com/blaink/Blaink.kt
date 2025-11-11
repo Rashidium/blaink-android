@@ -252,33 +252,32 @@ class Blaink private constructor() {
     }
     
     /**
-     * Handle deeplink from blainks:// scheme
+     * Handle deeplink from {scheme}://blainks.com/{UDID} format
      * 
      * @param uri The deeplink URI to handle
      * @return true if the deeplink was handled successfully, false otherwise
      */
     fun handleDeeplink(uri: android.net.Uri): Boolean {
-        // Check if scheme is blainks
-        if (uri.scheme != "blainks") {
-            Logger.w("⚠️ Invalid deeplink scheme: ${uri.scheme}")
+        // Check if host is blainks.com
+        if (uri.host != "blainks.com") {
+            Logger.w("⚠️ Invalid deeplink host: ${uri.host}")
             return false
         }
         
-        // Extract ID from URI (host or path)
-        val id = uri.host?.takeIf { it.isNotEmpty() } 
-            ?: uri.path?.trimStart('/')?.takeIf { it.isNotEmpty() }
+        // Extract UDID from path
+        val udid = uri.path?.trimStart('/')?.takeIf { it.isNotEmpty() }
         
-        if (id.isNullOrEmpty()) {
-            Logger.w("⚠️ Empty ID in deeplink")
+        if (udid.isNullOrEmpty()) {
+            Logger.w("⚠️ Empty UDID in deeplink")
             return false
         }
         
-        Logger.d("🔗 Handling deeplink with ID: $id")
+        Logger.d("🔗 Handling deeplink with UDID: $udid")
         
         // Call API
         scope.launch {
             try {
-                val request = com.blaink.core.api.models.requests.TestDeviceRegisterRequest(udid = id)
+                val request = com.blaink.core.api.models.requests.TestDeviceRegisterRequest(udid = udid)
                 val response = BlainkApiClient.testDeviceApi.register(request)
                 
                 if (response.isSuccessful) {
