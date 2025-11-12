@@ -25,12 +25,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             
-            <!-- Deeplink intent filter for blainks:// scheme -->
+            <!-- Deeplink intent filter for blnka714052b:// scheme -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="blainks" />
+                <data android:scheme="blnka714052b" />
             </intent-filter>
         </activity>
 
