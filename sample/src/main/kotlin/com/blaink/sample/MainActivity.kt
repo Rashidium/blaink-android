@@ -45,7 +45,7 @@ class MainActivity : AppCompatActivity() {
     
     private fun handleDeeplink(intent: Intent?) {
         intent?.data?.let { uri ->
-            val handled = blaink.handleDeeplink(uri)
+            val handled = blaink.handleDeeplink(uri.toString())
             if (handled) {
                 Toast.makeText(
                     this,
