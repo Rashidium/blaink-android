@@ -254,7 +254,7 @@ class Blaink private constructor() {
     /**
      * Handle deeplink from {scheme}://blainks.com/{UDID} format
      * 
-     * @param uri The deeplink URI to handle
+     * @param url The deeplink to handle
      * @return true if the deeplink was handled successfully, false otherwise
      */
     fun handleDeeplink(url: String): Boolean {
