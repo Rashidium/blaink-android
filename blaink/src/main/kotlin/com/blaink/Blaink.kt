@@ -257,15 +257,15 @@ class Blaink private constructor() {
      * @param uri The deeplink URI to handle
      * @return true if the deeplink was handled successfully, false otherwise
      */
-    fun handleDeeplink(uri: android.net.Uri): Boolean {
+    fun handleDeeplink(url: String): Boolean {
         // Check if host is blainks.com
-        if (uri.host != "blainks.com") {
-            Logger.w("⚠️ Invalid deeplink host: ${uri.host}")
+        if (!url.contains("blainks.com")) {
+            Logger.w("⚠️ Invalid deeplink host: ${url}")
             return false
         }
         
         // Extract UDID from path
-        val udid = uri.path?.trimStart('/')?.takeIf { it.isNotEmpty() }
+        val udid = url.trimStart('/').takeIf { it.isNotEmpty() }
         
         if (udid.isNullOrEmpty()) {
             Logger.w("⚠️ Empty UDID in deeplink")
