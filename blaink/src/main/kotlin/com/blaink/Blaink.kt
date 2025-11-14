@@ -265,7 +265,7 @@ class Blaink private constructor() {
         }
         
         // Extract UDID from path
-        val udid = url.trimStart('/').takeIf { it.isNotEmpty() }
+        val udid = url.trimEnd('/').split("/").last()
         
         if (udid.isNullOrEmpty()) {
             Logger.w("⚠️ Empty UDID in deeplink")
