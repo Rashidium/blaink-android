@@ -91,3 +91,4 @@ lint/tmp/
 .DS_Store
 
 gradle-*.zip
+.idea
