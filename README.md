@@ -8,155 +8,227 @@ Android SDK for Blaink push notification and user management platform.
 
 ## Features
 
-- 🔔 **Push Notifications**: FCM integration with delivery tracking
-- 🔐 **SSL Pinning**: Enhanced security with certificate pinning
-- 💾 **Secure Storage**: Encrypted data storage using Android Keystore
-- 🔄 **Session Management**: Automatic token refresh and user session handling
-- 📅 **Calendar Integration**: Schedule and manage calendar events
-- 🛠 **Multi-module Architecture**: Modular design for better maintainability
+- Push Notifications: FCM integration with automatic token management
+- Automatic Deeplink Handling: No manual `onNewIntent` handling required
+- SSL Pinning: Enhanced security with certificate pinning
+- Secure Storage: Encrypted data storage using Android Keystore
+- Session Management: Automatic token refresh and user session handling
 
 ## Installation
 
-### GitHub Packages (Recommended)
+### GitHub Packages
 
-Add the GitHub Packages repository to your project's `build.gradle.kts`:
-
-```kotlin
-repositories {
-    maven {
-        url = uri("https://maven.pkg.github.com/blaink/blaink-android")
-        credentials {
-            username = "your-github-username"
-            password = "your-github-token"
-        }
-    }
-}
-```
-
-Add the dependency:
+Add the GitHub Packages repository to your project's `settings.gradle.kts`:
 
 ```kotlin
-dependencies {
-    implementation("com.blaink:blaink-android:1.0.0")
-}
-```
-
-### JitPack (Alternative)
-
-Add JitPack repository:
-
-```kotlin
-repositories {
-    maven { url = uri("https://jitpack.io") }
-}
-```
-
-Add the dependency:
-
-```kotlin
-dependencies {
-    implementation("com.github.blaink:blaink-android:1.0.0")
-}
-```
-
-## Quick Start
-
-### 1. Initialize Firebase
-
-Add Firebase to your Android project by following the [official documentation](https://firebase.google.com/docs/android/setup).
-
-### 2. Setup Blaink SDK
-
-Initialize the SDK in your `Application` class:
-
-```kotlin
-class MyApplication : Application(), BlainkDelegate {
-    
-    override fun onCreate() {
-        super.onCreate()
-        
-        val blaink = Blaink.getInstance()
-        blaink.delegate = this
-        blaink.setup(
-            context = this,
-            sdkKey = "your_sdk_key_here",
-            environment = PushEnvironment.PRODUCTION,
-            isDebugLogsEnabled = BuildConfig.DEBUG
-        )
-    }
-    
-    override fun didReceiveNotification(notification: Map<String, Any>) {
-        // Handle notification received
-        println("Notification received: $notification")
-    }
-    
-    override fun didRegisterForBlainkNotifications(blainkUserId: String) {
-        // Handle successful registration
-        println("Registered with user ID: $blainkUserId")
-    }
-}
-```
-
-### 3. Register FCM Token
-
-Register for push notifications in your main activity:
-
-```kotlin
-class MainActivity : AppCompatActivity() {
-    
-    private val blaink = Blaink.getInstance()
-    
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        
-        // Get FCM token and register with Blaink
-        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                val token = task.result
-                blaink.registerForRemoteNotifications(token)
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            url = uri("https://maven.pkg.github.com/Rashidium/blaink-android")
+            credentials {
+                username = "your-github-username"
+                password = "your-github-token" // with read:packages scope
             }
         }
     }
 }
 ```
 
-### 4. Update AndroidManifest.xml
+Add the dependency to your app's `build.gradle.kts`:
 
-Add the Blaink FCM service to your manifest:
+```kotlin
+dependencies {
+    implementation("com.blaink:blaink:1.0.2")
+}
+```
+
+### JitPack (Alternative)
+
+Add JitPack repository to `settings.gradle.kts`:
+
+```kotlin
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url = uri("https://jitpack.io") }
+    }
+}
+```
+
+Add the dependency:
+
+```kotlin
+dependencies {
+    implementation("com.github.Rashidium:blaink-android:1.0.2")
+}
+```
+
+## Quick Start
+
+### 1. Add Firebase to Your Project
+
+Follow the [Firebase Android setup guide](https://firebase.google.com/docs/android/setup) to add Firebase to your project. Make sure to:
+
+1. Add `google-services.json` to your app module
+2. Apply the Google Services plugin in your `build.gradle.kts`:
+
+```kotlin
+plugins {
+    id("com.google.gms.google-services")
+}
+```
+
+### 2. Update AndroidManifest.xml
+
+Add the Blaink FCM service and deeplink intent filter:
 
 ```xml
-<service
-    android:name="com.blaink.push.BlainkFCMService"
-    android:exported="false">
-    <intent-filter>
-        <action android:name="com.google.firebase.MESSAGING_EVENT" />
-    </intent-filter>
-</service>
+<application ...>
+
+    <!-- Blaink FCM Service -->
+    <service
+        android:name="com.blaink.push.BlainkFCMService"
+        android:exported="false">
+        <intent-filter>
+            <action android:name="com.google.firebase.MESSAGING_EVENT" />
+        </intent-filter>
+    </service>
+
+    <!-- Add deeplink support to your launcher activity -->
+    <activity
+        android:name=".MainActivity"
+        android:exported="true">
+        <intent-filter>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent-filter>
+
+        <!-- Blaink Deeplink Handler -->
+        <intent-filter>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="YOUR_DEEPLINK_SCHEME" />
+        </intent-filter>
+    </activity>
+
+</application>
 ```
+
+Replace `YOUR_DEEPLINK_SCHEME` with your app's deeplink scheme (provided by Blaink).
+
+### 3. Initialize the SDK
+
+Create or update your `Application` class:
+
+```kotlin
+class MyApplication : Application(), BlainkDelegate {
+
+    override fun onCreate() {
+        super.onCreate()
+
+        Blaink.getInstance().apply {
+            delegate = this@MyApplication
+            setup(
+                context = this@MyApplication,
+                sdkKey = "YOUR_SDK_KEY",
+                environment = PushEnvironment.PRODUCTION,
+                isDebugLogsEnabled = BuildConfig.DEBUG
+            )
+        }
+    }
+
+    override fun didReceiveNotification(notification: Map<String, Any>) {
+        // Called when a push notification is received
+        Log.d("Blaink", "Notification received: $notification")
+    }
+
+    override fun didRegisterForBlainkNotifications(blainkUserId: String) {
+        // Called when device is successfully registered with Blaink
+        Log.d("Blaink", "Registered with user ID: $blainkUserId")
+    }
+}
+```
+
+Don't forget to register your Application class in `AndroidManifest.xml`:
+
+```xml
+<application
+    android:name=".MyApplication"
+    ...>
+```
+
+### 4. Register for Push Notifications
+
+In your main activity, call `registerForRemoteNotifications()`:
+
+```kotlin
+class MainActivity : AppCompatActivity() {
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        // Register for push notifications
+        // This automatically:
+        // - Requests POST_NOTIFICATIONS permission on Android 13+
+        // - Fetches the FCM token
+        // - Registers with Blaink backend
+        Blaink.getInstance().registerForRemoteNotifications(this)
+    }
+}
+```
+
+That's it! The SDK automatically handles:
+- FCM token retrieval and registration
+- Notification permission requests (Android 13+)
+- Deeplink handling via `ActivityLifecycleCallbacks`
 
 ## Advanced Usage
 
-### SSL Certificate Pinning
+### Manual FCM Token Registration
 
-The SDK includes SSL certificate pinning for enhanced security. To update certificate hashes:
+If you manage FCM tokens yourself, use `registerFCMToken()` instead:
 
-1. Update the hashes in `SSLPinningManager.kt`
-2. Test with your server endpoints
-3. Monitor certificate expiration dates
+```kotlin
+FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+    Blaink.getInstance().registerFCMToken(token)
+}
+```
+
+### Manual Deeplink Handling
+
+The SDK automatically handles deeplinks, but you can also handle them manually:
+
+```kotlin
+// Returns true if the deeplink was handled by Blaink
+val handled = Blaink.getInstance().handleDeeplink(uri.toString())
+```
 
 ### Session Management
 
 ```kotlin
-// Check authentication status
+// Check if user is authenticated
 if (UserSession.isAuthenticated) {
     // User is logged in
 }
 
-// Logout user
+// Get current user
 lifecycleScope.launch {
-    val result = blaink.logout()
-    if (result.isSuccess) {
-        // Logout successful
+    val result = Blaink.getInstance().getCurrentUser()
+    result.onSuccess { userId ->
+        Log.d("Blaink", "User ID: $userId")
+    }
+}
+
+// Logout
+lifecycleScope.launch {
+    val result = Blaink.getInstance().logout()
+    result.onSuccess {
+        Log.d("Blaink", "Logged out successfully")
     }
 }
 ```
@@ -167,39 +239,37 @@ Track notification interactions:
 
 ```kotlin
 // Track when notification is opened
-blaink.trackNotificationAction(notificationId, "opened")
+Blaink.getInstance().trackNotificationAction(notificationId, "opened")
 
 // Track when notification is dismissed
-blaink.trackNotificationAction(notificationId, "dismissed")
+Blaink.getInstance().trackNotificationAction(notificationId, "dismissed")
 ```
 
 ## Configuration
 
 ### Environment Setup
 
-Configure the SDK for different environments:
-
 ```kotlin
-// Development environment
-blaink.setup(
+// Development (for testing)
+Blaink.getInstance().setup(
     context = this,
-    sdkKey = "dev_sdk_key",
+    sdkKey = "YOUR_SDK_KEY",
     environment = PushEnvironment.DEVELOPMENT,
     isDebugLogsEnabled = true
 )
 
-// Production environment
-blaink.setup(
+// Production
+Blaink.getInstance().setup(
     context = this,
-    sdkKey = "prod_sdk_key",
+    sdkKey = "YOUR_SDK_KEY",
     environment = PushEnvironment.PRODUCTION,
     isDebugLogsEnabled = false
 )
 ```
 
-### ProGuard/R8
+### ProGuard / R8
 
-If you're using code obfuscation, add these rules to your `proguard-rules.pro`:
+Add these rules to your `proguard-rules.pro`:
 
 ```proguard
 # Blaink SDK
@@ -211,27 +281,51 @@ If you're using code obfuscation, add these rules to your `proguard-rules.pro`:
 -dontnote kotlinx.serialization.AnnotationsKt
 ```
 
-## Architecture
-
-The SDK is built with a modular architecture:
-
-- **blaink-core**: Core networking, storage, and SSL pinning
-- **blaink-push**: FCM integration and notification handling
-- **blaink**: Main SDK facade combining all modules
-
 ## Requirements
 
 - Android API 21+ (Android 5.0)
 - Kotlin 1.9.20+
 - Firebase Cloud Messaging
 
-## Contributing
+## Module Structure
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Submit a pull request
+The SDK is built with a modular architecture:
+
+| Module | Description |
+|--------|-------------|
+| `blaink` | Main SDK facade - use this in your app |
+| `blaink-core` | Core networking, storage, and SSL pinning |
+| `blaink-push` | FCM integration and notification handling |
+
+## Migration Guide
+
+### From 1.0.x to 1.1.0
+
+The SDK now handles FCM token retrieval automatically. Update your code:
+
+**Before:**
+```kotlin
+// In MainActivity
+FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+    if (task.isSuccessful) {
+        Blaink.getInstance().registerForRemoteNotifications(task.result)
+    }
+}
+
+// Handle deeplinks manually
+override fun onNewIntent(intent: Intent) {
+    super.onNewIntent(intent)
+    intent.data?.let { Blaink.getInstance().handleDeeplink(it.toString()) }
+}
+```
+
+**After:**
+```kotlin
+// In MainActivity - that's all you need!
+Blaink.getInstance().registerForRemoteNotifications(this)
+
+// Deeplinks are handled automatically - no onNewIntent override needed
+```
 
 ## License
 
@@ -239,8 +333,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-For support and questions:
-
-- 📧 Email: dev@blaink.com
-- 📖 Documentation: [https://docs.blaink.com](https://docs.blaink.com)
-- 🐛 Issues: [GitHub Issues](https://github.com/blaink/blaink-android/issues)
+- Email: support@blaink.com
+- Documentation: [https://docs.blaink.com](https://docs.blaink.com)
+- Issues: [GitHub Issues](https://github.com/Rashidium/blaink-android/issues)

@@ -7,7 +7,15 @@
 
 package com.blaink
 
+import android.app.Activity
+import android.app.Application
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import android.os.Bundle
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.blaink.core.BlainkDelegate
 import com.blaink.core.PushEnvironment
 import com.blaink.core.api.BlainkApiClient
@@ -19,6 +27,7 @@ import com.blaink.core.storage.UserSession
 import com.blaink.core.utils.DeviceInfo
 import com.blaink.core.utils.Logger
 import com.blaink.push.PushNotificationManager
+import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -67,10 +76,12 @@ class Blaink private constructor() {
     private var sdkKey: String = ""
     private var environment: PushEnvironment = PushEnvironment.PRODUCTION
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private var applicationContext: Context? = null
+    private var activityLifecycleCallbacks: Application.ActivityLifecycleCallbacks? = null
     
     /**
      * Setup the Blaink SDK
-     * 
+     *
      * @param context Application context
      * @param sdkKey Your Blaink SDK key
      * @param environment Push notification environment (development/production)
@@ -84,21 +95,78 @@ class Blaink private constructor() {
     ) {
         this.sdkKey = sdkKey
         this.environment = environment
-        
+        this.applicationContext = context.applicationContext
+
         // Initialize logging
         Logger.isDebugEnabled = isDebugLogsEnabled
         Logger.i("🚀 Initializing Blaink SDK v${BuildConfig.SDK_VERSION}")
-        
+
         // Initialize storage
         SecureStorage.initialize(context)
         Logger.d("💾 Secure storage initialized")
-        
+
         // Initialize SSL pinning
         SSLPinningManager.initialize(context, isDebugLogsEnabled)
         Logger.d("🔐 SSL pinning initialized")
-        
+
+        // Register activity lifecycle callbacks for automatic deeplink handling
+        registerActivityLifecycleCallbacks(context)
+
         // Register device
         registerDevice(context)
+    }
+
+    /**
+     * Register activity lifecycle callbacks to automatically handle deeplinks
+     */
+    private fun registerActivityLifecycleCallbacks(context: Context) {
+        val application = context.applicationContext as? Application ?: return
+
+        // Unregister previous callbacks if any
+        activityLifecycleCallbacks?.let { application.unregisterActivityLifecycleCallbacks(it) }
+
+        activityLifecycleCallbacks = object : Application.ActivityLifecycleCallbacks {
+            private var lastHandledIntent: Intent? = null
+
+            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+                // Handle deeplink from initial intent
+                if (savedInstanceState == null) {
+                    handleIntentDeeplink(activity.intent)
+                    lastHandledIntent = activity.intent
+                }
+            }
+
+            override fun onActivityResumed(activity: Activity) {
+                // Handle deeplink when app is already running (onNewIntent scenario)
+                val currentIntent = activity.intent
+                if (currentIntent != null && currentIntent != lastHandledIntent) {
+                    handleIntentDeeplink(currentIntent)
+                    lastHandledIntent = currentIntent
+                }
+            }
+
+            override fun onActivityStarted(activity: Activity) {}
+            override fun onActivityPaused(activity: Activity) {}
+            override fun onActivityStopped(activity: Activity) {}
+            override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
+            override fun onActivityDestroyed(activity: Activity) {
+                if (activity.intent == lastHandledIntent) {
+                    lastHandledIntent = null
+                }
+            }
+        }
+
+        application.registerActivityLifecycleCallbacks(activityLifecycleCallbacks)
+        Logger.d("📱 Activity lifecycle callbacks registered for automatic deeplink handling")
+    }
+
+    /**
+     * Handle deeplink from intent data
+     */
+    private fun handleIntentDeeplink(intent: Intent?) {
+        intent?.data?.let { uri ->
+            handleDeeplink(uri.toString())
+        }
     }
     
     /**
@@ -142,16 +210,60 @@ class Blaink private constructor() {
     }
     
     /**
-     * Register for remote notifications with FCM token
-     * 
+     * Register for remote notifications
+     *
+     * This method automatically:
+     * - Requests POST_NOTIFICATIONS permission on Android 13+
+     * - Fetches the FCM token from Firebase
+     * - Registers the token with Blaink backend
+     *
+     * @param activity The activity to request permission from (required for Android 13+)
+     * @param requestCode Permission request code (default: 101)
+     */
+    fun registerForRemoteNotifications(activity: Activity? = null, requestCode: Int = 101) {
+        Logger.d("🔔 Registering for remote notifications...")
+
+        // Request notification permission on Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && activity != null) {
+            if (ContextCompat.checkSelfPermission(
+                    activity,
+                    android.Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(
+                    activity,
+                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                    requestCode
+                )
+            }
+        }
+
+        // Fetch and register FCM token
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                Logger.e("❌ Fetching FCM registration token failed: ${task.exception}")
+                return@addOnCompleteListener
+            }
+
+            val token = task.result
+            Logger.d("🔔 FCM Token: $token")
+            registerFCMToken(token)
+        }
+    }
+
+    /**
+     * Register FCM token with Blaink backend
+     *
+     * Use this method if you already have the FCM token and want to register it manually.
+     *
      * @param deviceToken FCM registration token
      */
-    fun registerForRemoteNotifications(deviceToken: String) {
+    fun registerFCMToken(deviceToken: String) {
         Logger.d("🔔 Registering FCM token: $deviceToken")
-        
+
         // Store the token
         SecureStorage.setPushNotificationToken(deviceToken)
-        
+
         // Submit to backend if authenticated
         if (UserSession.isAuthenticated) {
             submitFCMToken(deviceToken)

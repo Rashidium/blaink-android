@@ -52,16 +52,20 @@ dependencies {
     // Internal modules
     api(project(":blaink-core"))
     api(project(":blaink-push"))
-    
+
     // Core dependencies
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime)
     implementation(libs.kotlinx.coroutines.android)
-    
+
     // Network dependencies (for Retrofit Response classes)
     implementation(libs.retrofit)
     implementation(libs.okhttp)
-    
+
+    // Firebase (for automatic FCM token retrieval)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
+
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)
