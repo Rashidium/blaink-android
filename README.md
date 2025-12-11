@@ -247,26 +247,6 @@ Blaink.getInstance().trackNotificationAction(notificationId, "dismissed")
 
 ## Configuration
 
-### Environment Setup
-
-```kotlin
-// Development (for testing)
-Blaink.getInstance().setup(
-    context = this,
-    sdkKey = "YOUR_SDK_KEY",
-    environment = PushEnvironment.DEVELOPMENT,
-    isDebugLogsEnabled = true
-)
-
-// Production
-Blaink.getInstance().setup(
-    context = this,
-    sdkKey = "YOUR_SDK_KEY",
-    environment = PushEnvironment.PRODUCTION,
-    isDebugLogsEnabled = false
-)
-```
-
 ### ProGuard / R8
 
 Add these rules to your `proguard-rules.pro`:
@@ -296,36 +276,6 @@ The SDK is built with a modular architecture:
 | `blaink` | Main SDK facade - use this in your app |
 | `blaink-core` | Core networking, storage, and SSL pinning |
 | `blaink-push` | FCM integration and notification handling |
-
-## Migration Guide
-
-### From 1.0.x to 1.1.0
-
-The SDK now handles FCM token retrieval automatically. Update your code:
-
-**Before:**
-```kotlin
-// In MainActivity
-FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-    if (task.isSuccessful) {
-        Blaink.getInstance().registerForRemoteNotifications(task.result)
-    }
-}
-
-// Handle deeplinks manually
-override fun onNewIntent(intent: Intent) {
-    super.onNewIntent(intent)
-    intent.data?.let { Blaink.getInstance().handleDeeplink(it.toString()) }
-}
-```
-
-**After:**
-```kotlin
-// In MainActivity - that's all you need!
-Blaink.getInstance().registerForRemoteNotifications(this)
-
-// Deeplinks are handled automatically - no onNewIntent override needed
-```
 
 ## License
 
