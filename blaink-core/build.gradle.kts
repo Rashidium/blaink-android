@@ -82,7 +82,7 @@ mavenPublishing {
     signAllPublications()
 
     coordinates(
-        groupId = "io.github.rashidium",
+        groupId = "com.blainks",
         artifactId = "blaink-core",
         version = project.version.toString()
     )

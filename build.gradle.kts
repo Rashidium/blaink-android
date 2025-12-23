@@ -16,7 +16,7 @@ plugins {
 }
 
 allprojects {
-    group = "io.github.rashidium"
+    group = "com.blainks"
     version = System.getenv("RELEASE_VERSION") ?: "1.3.46"
 }
 

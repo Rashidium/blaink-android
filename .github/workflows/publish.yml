@@ -71,11 +71,11 @@ jobs:
         echo "**Version:** ${{ steps.extract_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Artifacts:" >> $GITHUB_STEP_SUMMARY
-        echo "- \`io.github.rashidium:blaink:${{ steps.extract_version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
-        echo "- \`io.github.rashidium:blaink-core:${{ steps.extract_version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
-        echo "- \`io.github.rashidium:blaink-push:${{ steps.extract_version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- \`com.blainks:blaink:${{ steps.extract_version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- \`com.blainks:blaink-core:${{ steps.extract_version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- \`com.blainks:blaink-push:${{ steps.extract_version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Usage:" >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`kotlin" >> $GITHUB_STEP_SUMMARY
-        echo "implementation(\"io.github.rashidium:blaink:${{ steps.extract_version.outputs.version }}\")" >> $GITHUB_STEP_SUMMARY
+        echo "implementation(\"com.blainks:blaink:${{ steps.extract_version.outputs.version }}\")" >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
