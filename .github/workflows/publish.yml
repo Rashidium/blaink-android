@@ -1,31 +1,28 @@
-name: Publish Package
+name: Publish to Maven Central
 
 on:
   release:
     types: [created]
-  push:
-    branches: [main]
-    # Removed tags trigger to prevent duplicate builds when creating releases through GitHub UI
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # Changed to write to allow tag creation
+      contents: write
       packages: write
-      
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0  # Fetch all history for tags
-    
+        fetch-depth: 0
+
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
-        
+
     - name: Cache Gradle packages
       uses: actions/cache@v4
       with:
@@ -35,140 +32,50 @@ jobs:
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
         restore-keys: |
           ${{ runner.os }}-gradle-
-          
+
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
-      
-    - name: Extract version from tag or generate new version
+
+    - name: Extract version from tag
       id: extract_version
       run: |
-        if [[ "${{ github.event_name }}" == "release" ]]; then
-          # If this is a release event, extract version from the tag name
-          TAG_NAME="${{ github.event.release.tag_name }}"
-          if [[ "$TAG_NAME" =~ ^v(.+)$ ]]; then
-            echo "version=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
-          else
-            echo "version=${TAG_NAME}" >> $GITHUB_OUTPUT
-          fi
-          echo "is_tag=true" >> $GITHUB_OUTPUT
+        TAG_NAME="${{ github.event.release.tag_name }}"
+        if [[ "$TAG_NAME" =~ ^v(.+)$ ]]; then
+          echo "version=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
         else
-          # If this is a regular push to main, auto-generate next version
-          echo "is_tag=false" >> $GITHUB_OUTPUT
-          
-          # Get all existing tags (both v* and plain version tags)
-          ALL_TAGS=$(git tag -l | grep -E '^(v)?[0-9]+\.[0-9]+\.[0-9]+$' | sed 's/^v//' | sort -V)
-          
-          if [ -z "$ALL_TAGS" ]; then
-            echo "version=1.0.0" >> $GITHUB_OUTPUT
-          else
-            # Get the highest version
-            LATEST_VERSION=$(echo "$ALL_TAGS" | tail -1)
-            
-            # Parse version components
-            if [[ "$LATEST_VERSION" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
-              MAJOR=${BASH_REMATCH[1]}
-              MINOR=${BASH_REMATCH[2]}
-              PATCH=${BASH_REMATCH[3]}
-              
-              # Increment patch version
-              NEW_PATCH=$((PATCH + 1))
-              echo "version=${MAJOR}.${MINOR}.${NEW_PATCH}" >> $GITHUB_OUTPUT
-            else
-              echo "version=1.0.0" >> $GITHUB_OUTPUT
-            fi
-          fi
+          echo "version=${TAG_NAME}" >> $GITHUB_OUTPUT
         fi
-      
+        echo "Extracted version: $(cat $GITHUB_OUTPUT | grep version)"
+
     - name: Build release AAR
       run: ./gradlew assembleRelease
       env:
         RELEASE_VERSION: ${{ steps.extract_version.outputs.version }}
-      
+
     - name: Run tests
       run: ./gradlew test
-      
-    - name: Check if version already exists
-      run: |
-        VERSION="${{ steps.extract_version.outputs.version }}"
-        IS_TAG="${{ steps.extract_version.outputs.is_tag }}"
-        EVENT_NAME="${{ github.event_name }}"
-        
-        echo "Checking version: $VERSION"
-        echo "Is tag event: $IS_TAG"
-        echo "Event name: $EVENT_NAME"
-        
-        # If this is a release event or tag push, skip the conflict check
-        # since we're using an existing tag version
-        if [[ "$IS_TAG" == "true" ]]; then
-          echo "Using existing tag version $VERSION - skipping conflict check"
-        else
-          echo "Checking if version $VERSION already exists..."
-          
-          # Check if any of the packages already exist
-          for module in blaink blaink-core blaink-push; do
-            URL="https://maven.pkg.github.com/Rashidium/blaink-android/com/blaink/$module/$VERSION/$module-$VERSION.aar"
-            echo "Checking URL: $URL"
-            
-            # Get HTTP status code
-            STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "$URL")
-            echo "HTTP Status Code: $STATUS_CODE"
-            
-            if [[ "$STATUS_CODE" == "200" ]]; then
-              echo "ERROR: Version $VERSION for $module already exists in GitHub Packages!"
-              echo "Please use a different version number or delete the existing version."
-              exit 1
-            elif [[ "$STATUS_CODE" != "404" ]]; then
-              echo "WARNING: Unexpected status code $STATUS_CODE for $module"
-            fi
-          done
-          echo "Version $VERSION is available for publishing."
-        fi
-      
-    - name: Delete existing packages if tag event
-      if: steps.extract_version.outputs.is_tag == 'true'
-      run: |
-        VERSION="${{ steps.extract_version.outputs.version }}"
-        echo "Deleting existing packages for version $VERSION (tag event)..."
-        
-        # Delete existing packages for this version
-        for module in blaink blaink-core blaink-push; do
-          URL="https://maven.pkg.github.com/Rashidium/blaink-android/com/blaink/$module/$VERSION/$module-$VERSION.aar"
-          echo "Deleting: $URL"
-          
-          # Try to delete the package
-          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "$URL")
-          echo "Delete status code: $STATUS_CODE"
-          
-          if [[ "$STATUS_CODE" == "204" ]]; then
-            echo "Successfully deleted $module-$VERSION"
-          elif [[ "$STATUS_CODE" == "404" ]]; then
-            echo "$module-$VERSION doesn't exist (already clean)"
-          else
-            echo "Warning: Failed to delete $module-$VERSION (status: $STATUS_CODE)"
-          fi
-        done
-        
-    - name: Publish to GitHub Packages
-      run: ./gradlew publish
+
+    - name: Publish to Maven Central
+      run: ./gradlew publishAllPublicationsToMavenCentralRepository
       env:
-        GITHUB_ACTOR: ${{ github.actor }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         RELEASE_VERSION: ${{ steps.extract_version.outputs.version }}
-        
-    - name: Create and push tag (only for regular pushes)
-      if: steps.extract_version.outputs.is_tag == 'false'
+        MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+        MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+        GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+
+    - name: Publish summary
       run: |
-        VERSION="${{ steps.extract_version.outputs.version }}"
-        TAG_NAME="v${VERSION}"
-        
-        echo "Creating and pushing tag: $TAG_NAME"
-        
-        # Configure git
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        
-        # Create and push the tag
-        git tag "$TAG_NAME"
-        git push origin "$TAG_NAME"
-        
-        echo "Tag $TAG_NAME created and pushed successfully!"
+        echo "## 🚀 Published to Maven Central" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Version:** ${{ steps.extract_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Artifacts:" >> $GITHUB_STEP_SUMMARY
+        echo "- \`io.github.rashidium:blaink:${{ steps.extract_version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- \`io.github.rashidium:blaink-core:${{ steps.extract_version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "- \`io.github.rashidium:blaink-push:${{ steps.extract_version.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Usage:" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`kotlin" >> $GITHUB_STEP_SUMMARY
+        echo "implementation(\"io.github.rashidium:blaink:${{ steps.extract_version.outputs.version }}\")" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
