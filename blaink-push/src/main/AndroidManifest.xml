@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- BroadcastReceiver for notification open events -->
+    <application>
+        <receiver
+            android:name="com.blaink.push.NotificationOpenReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.blaink.NOTIFICATION_OPENED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- BroadcastReceiver for notification dismiss events -->
+        <receiver
+            android:name="com.blaink.push.NotificationDismissReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.blaink.NOTIFICATION_DISMISSED" />
+            </intent-filter>
+        </receiver>
+    </application>
+
+</manifest>
