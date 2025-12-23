@@ -1,7 +1,11 @@
+import com.vanniktech.maven.publish.SonatypeHost
+import com.vanniktech.maven.publish.AndroidSingleVariantLibrary
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.maven.publish.central)
 }
 
 android {
@@ -10,7 +14,7 @@ android {
 
     defaultConfig {
         minSdk = libs.versions.minSdk.get().toInt()
-        
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
     }
@@ -24,81 +28,79 @@ android {
             )
         }
     }
-    
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    
+
     kotlinOptions {
         jvmTarget = "11"
-    }
-    
-    publishing {
-        singleVariant("release") {
-            withSourcesJar()
-            withJavadocJar()
-        }
     }
 }
 
 dependencies {
     implementation(project(":blaink-core"))
-    
+
     // Firebase BOM
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
-    
+
     // Core dependencies
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.json)
-    
+
     // Network dependencies (needed for API calls)
     implementation(libs.retrofit)
     implementation(libs.okhttp)
-    
+
     // Testing
     testImplementation(libs.junit)
 }
 
-publishing {
-    publications {
-        register<MavenPublication>("release") {
-            groupId = "io.github.rashidium"
-            artifactId = project.name
-            version = project.version.toString()
+mavenPublishing {
+    configure(AndroidSingleVariantLibrary(
+        variant = "release",
+        sourcesJar = true,
+        publishJavadocJar = true
+    ))
 
-            afterEvaluate {
-                from(components["release"])
+    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+    signAllPublications()
+
+    coordinates(
+        groupId = "io.github.rashidium",
+        artifactId = "blaink-push",
+        version = project.version.toString()
+    )
+
+    pom {
+        name.set("Blaink Android SDK - Push")
+        description.set("Push notification module for Blaink Android SDK")
+        url.set("https://github.com/Rashidium/blaink-android")
+        inceptionYear.set("2024")
+
+        licenses {
+            license {
+                name.set("MIT License")
+                url.set("https://opensource.org/licenses/MIT")
+                distribution.set("repo")
             }
+        }
 
-            pom {
-                name.set("Blaink Android SDK - Push")
-                description.set("Push notification module for Blaink Android SDK")
-                url.set("https://github.com/Rashidium/blaink-android")
-
-                licenses {
-                    license {
-                        name.set("MIT License")
-                        url.set("https://opensource.org/licenses/MIT")
-                    }
-                }
-
-                developers {
-                    developer {
-                        id.set("rashidium")
-                        name.set("Rashid Ramazanov")
-                        email.set("support@blaink.com")
-                    }
-                }
-
-                scm {
-                    connection.set("scm:git:github.com/Rashidium/blaink-android.git")
-                    developerConnection.set("scm:git:ssh://github.com/Rashidium/blaink-android.git")
-                    url.set("https://github.com/Rashidium/blaink-android/tree/main")
-                }
+        developers {
+            developer {
+                id.set("rashidium")
+                name.set("Rashid Ramazanov")
+                email.set("support@blaink.com")
             }
+        }
+
+        scm {
+            connection.set("scm:git:github.com/Rashidium/blaink-android.git")
+            developerConnection.set("scm:git:ssh://github.com/Rashidium/blaink-android.git")
+            url.set("https://github.com/Rashidium/blaink-android/tree/main")
         }
     }
 }
