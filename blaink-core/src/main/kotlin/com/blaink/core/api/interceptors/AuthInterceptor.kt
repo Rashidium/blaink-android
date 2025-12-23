@@ -34,6 +34,12 @@ class AuthInterceptor : Interceptor {
             // Refresh endpoint uses refresh token (implement later)
             return chain.proceed(originalRequest)
         }
+
+        // Skip auth for updateNotification endpoint - this is called from FCM service
+        // which may not have access to auth tokens (similar to iOS Notification Service Extension)
+        if (originalRequest.url.encodedPath.contains("/updateNotification")) {
+            return chain.proceed(originalRequest)
+        }
         
         // Add access token if available
         val accessToken = UserSession.accessToken

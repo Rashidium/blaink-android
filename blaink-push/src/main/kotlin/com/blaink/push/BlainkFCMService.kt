@@ -65,7 +65,7 @@ class BlainkFCMService : FirebaseMessagingService() {
                     Logger.d("🔔 Notification opened: $notificationId")
                     if (notificationId != null) {
                         // Track open action
-                        PushNotificationManager.trackNotificationAction(notificationId, "delivered")
+                        PushNotificationManager.trackNotificationAction(notificationId, "open")
                     }
 
                     // Extract notification data and notify delegate
