@@ -36,4 +36,14 @@
         android:textSize="16sp"
         android:layout_marginTop="32dp" />
 
+    <TextView
+        android:id="@+id/tvLocalised"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Loading..."
+        android:textSize="18sp"
+        android:textStyle="italic"
+        android:gravity="center"
+        android:layout_marginTop="16dp" />
+
 </LinearLayout>

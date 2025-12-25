@@ -9,6 +9,7 @@ package com.blaink.core.api
 
 import com.blaink.core.api.interceptors.AuthInterceptor
 import com.blaink.core.api.ssl.SSLPinningManager
+import com.blaink.core.localisation.LocalisationApi
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -45,4 +46,5 @@ object BlainkApiClient {
     val apnsApi: ApnsApi by lazy { retrofit.create(ApnsApi::class.java) }
     val calendarApi: CalendarApi by lazy { retrofit.create(CalendarApi::class.java) }
     val testDeviceApi: TestDeviceApi by lazy { retrofit.create(TestDeviceApi::class.java) }
+    val localisationApi: LocalisationApi by lazy { retrofit.create(LocalisationApi::class.java) }
 }

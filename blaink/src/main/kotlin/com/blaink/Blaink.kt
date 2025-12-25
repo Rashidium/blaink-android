@@ -22,6 +22,8 @@ import com.blaink.core.api.BlainkApiClient
 import com.blaink.core.api.models.requests.ClientRequest
 import com.blaink.core.api.models.requests.UpdateUserRequest
 import com.blaink.core.api.ssl.SSLPinningManager
+import com.blaink.core.localisation.LocalisationManager
+import com.blaink.core.localisation.LocalisationStorage
 import com.blaink.core.storage.SecureStorage
 import com.blaink.core.storage.UserSession
 import com.blaink.core.utils.DeviceInfo
@@ -78,6 +80,21 @@ class Blaink private constructor() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var applicationContext: Context? = null
     private var activityLifecycleCallbacks: Application.ActivityLifecycleCallbacks? = null
+
+    /**
+     * Localisation manager for translation sync and retrieval
+     * Note: Only available after setup() is called
+     */
+    private var _localisation: LocalisationManager? = null
+
+    /**
+     * Access to localisation manager
+     * @throws IllegalStateException if accessed before setup()
+     */
+    val localisation: LocalisationManager
+        get() = _localisation ?: throw IllegalStateException(
+            "[Blaink] Localisation accessed before setup(). Call Blaink.getInstance().setup() first."
+        )
     
     /**
      * Setup the Blaink SDK
@@ -104,6 +121,11 @@ class Blaink private constructor() {
         // Initialize storage
         SecureStorage.initialize(context)
         Logger.d("💾 Secure storage initialized")
+
+        // Initialize localisation storage and manager
+        LocalisationStorage.initialize(context)
+        _localisation = LocalisationManager(sdkKey)
+        Logger.d("🌐 Localisation manager initialized")
 
         // Initialize SSL pinning
         SSLPinningManager.initialize(context, isDebugLogsEnabled)
@@ -199,6 +221,9 @@ class Blaink private constructor() {
                         if (fcmToken != null) {
                             submitFCMToken(fcmToken)
                         }
+
+                        // Sync localisation after successful SDK init
+                        _localisation?.sync()
                     }
                 } else {
                     Logger.e("❌ Device registration failed: ${response.errorBody()?.string()}")
