@@ -17,7 +17,7 @@ package com.blaink.core.localisation
  * @return Translated string or the key itself if not found
  */
 val String.localized: String
-    get() = LocalisationStorage.getString(this, LocalisationStorage.currentLanguage) ?: this
+    get() = (LocalisationStorage.getString(this, LocalisationStorage.currentLanguage) ?: this).unescapeNewlines()
 
 /**
  * Get localized string for this key in specified language
@@ -31,5 +31,12 @@ val String.localized: String
  * @return Translated string or the key itself if not found
  */
 fun String.localized(lang: String): String {
-    return LocalisationStorage.getString(this, lang) ?: this
+    return (LocalisationStorage.getString(this, lang) ?: this).unescapeNewlines()
+}
+
+/**
+ * Converts literal "\n" to actual newline characters
+ */
+private fun String.unescapeNewlines(): String {
+    return replace("\\n", "\n")
 }
