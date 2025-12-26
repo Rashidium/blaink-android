@@ -140,28 +140,27 @@ object LocalisationStorage {
     fun apply(keys: Map<String, Map<String, String>>, deletedKeys: List<String>?, newVersion: Long) {
         val editor = requirePrefs().edit()
 
-        // Update/add keys
+        // Collect all languages upfront
+        val newLanguages = languages.toMutableSet()
+        val existingLangs = newLanguages.toList()
+
+        // Update/add keys in batch
         for ((key, translations) in keys) {
             for ((lang, value) in translations) {
                 editor.putString("$lang.$key", value)
-
-                // Track language if new
-                val currentLangs = languages.toMutableList()
-                if (!currentLangs.contains(lang)) {
-                    currentLangs.add(lang)
-                    languages = currentLangs
-                }
+                newLanguages.add(lang)
             }
         }
 
         // Remove deleted keys
         deletedKeys?.forEach { key ->
-            for (lang in languages) {
+            for (lang in existingLangs) {
                 editor.remove("$lang.$key")
             }
         }
 
-        // Update version
+        // Update languages and version in same batch
+        editor.putStringSet(LANGUAGES_KEY, newLanguages)
         editor.putLong(VERSION_KEY, newVersion)
         editor.apply()
     }
