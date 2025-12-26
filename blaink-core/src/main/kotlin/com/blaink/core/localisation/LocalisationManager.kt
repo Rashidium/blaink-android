@@ -39,6 +39,21 @@ class LocalisationManager(
         storage.currentLanguage = lang
     }
 
+    /**
+     * Set fallback string resources class for Android resource lookups
+     * Call this to enable fallback to strings.xml when server value not found
+     *
+     * Usage:
+     * ```
+     * Blaink.getInstance().localisation.setFallbackResources(R.string::class.java)
+     * ```
+     *
+     * @param stringResClass The R.string class from your app module
+     */
+    fun setFallbackResources(stringResClass: Class<*>) {
+        storage.fallbackStringResources = stringResClass
+    }
+
     // MARK: - Sync
 
     /**

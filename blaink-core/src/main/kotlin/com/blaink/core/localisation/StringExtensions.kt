@@ -10,6 +10,7 @@ import java.util.Locale
 
 /**
  * Get localized string for this key using current language
+ * First checks Blaink server cache, then falls back to Android string resources
  *
  * Usage:
  * ```
@@ -19,7 +20,18 @@ import java.util.Locale
  * @return Translated string or the key itself if not found
  */
 val String.localized: String
-    get() = (LocalisationStorage.getString(this, LocalisationStorage.currentLanguage) ?: this).unescapeNewlines()
+    get() {
+        // First try Blaink server localisation
+        LocalisationStorage.getString(this, LocalisationStorage.currentLanguage)?.let {
+            return it.unescapeNewlines()
+        }
+        // Fall back to Android string resources
+        LocalisationStorage.getFallbackString(this)?.let {
+            return it.unescapeNewlines()
+        }
+        // Return key if not found anywhere
+        return this
+    }
 
 /**
  * Get localized string for this key in specified language

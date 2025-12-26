@@ -23,12 +23,40 @@ object LocalisationStorage {
     private const val CURRENT_LANGUAGE_KEY = "_currentLanguage"
 
     private var prefs: SharedPreferences? = null
+    private var appContext: Context? = null
+
+    /**
+     * Fallback resource class for R.string lookups (e.g., com.myapp.R.string::class.java)
+     * Set this to enable fallback to Android string resources
+     */
+    var fallbackStringResources: Class<*>? = null
 
     /**
      * Initialize storage with application context
      */
     fun initialize(context: Context) {
-        prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        appContext = context.applicationContext
+        prefs = appContext!!.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    }
+
+    /**
+     * Get fallback string from Android resources
+     * Converts key like "onboarding.title" to resource name "onboarding_title"
+     */
+    fun getFallbackString(key: String): String? {
+        val context = appContext ?: return null
+        val resClass = fallbackStringResources ?: return null
+
+        // Convert dot notation to underscore (e.g., "onboarding.title" -> "onboarding_title")
+        val resourceName = key.replace(".", "_")
+
+        return try {
+            val field = resClass.getField(resourceName)
+            val resId = field.getInt(null)
+            context.getString(resId)
+        } catch (e: Exception) {
+            null
+        }
     }
 
     private fun requirePrefs(): SharedPreferences {
